@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This script is a helper to update the Gateway_ID field of given
 # JSON configuration file, as a EUI-64 address generated from the 48-bits MAC
@@ -9,9 +9,10 @@
 
 iot_sk_update_gwid() {
     # get gateway ID from its MAC address to generate an EUI-64 address
+    ETH_IF=${2:-eth0}
     GWID_MIDFIX="FFFE"
-    GWID_BEGIN=$(ip link show eth0 | awk '/ether/ {print $2}' | awk -F\: '{print $1$2$3}')
-    GWID_END=$(ip link show eth0 | awk '/ether/ {print $2}' | awk -F\: '{print $4$5$6}')
+    GWID_BEGIN=$(ip link show $ETH_IF | awk '/ether/ {print $2}' | awk -F\: '{print $1$2$3}')
+    GWID_END=$(ip link show $ETH_IF | awk '/ether/ {print $2}' | awk -F\: '{print $4$5$6}')
 
     # replace last 8 digits of default gateway ID by actual GWID, in given JSON configuration file
     sed -i 's/\(^\s*"gateway_ID":\s*"\).\{16\}"\s*\(,\?\).*$/\1'${GWID_BEGIN}${GWID_MIDFIX}${GWID_END}'"\2/' $1
@@ -19,13 +20,13 @@ iot_sk_update_gwid() {
     echo "Gateway_ID set to "$GWID_BEGIN$GWID_MIDFIX$GWID_END" in file "$1
 }
 
-if [ $# -ne 1 ]
+if [ $# -le 1 ]
 then
-    echo "Usage: $0 [filename]"
+    echo "Usage: $0 [filename] [eth_name]"
     echo "  filename: Path to JSON file containing Gateway_ID for packet forwarder"
     exit 1
 fi 
 
-iot_sk_update_gwid $1
+iot_sk_update_gwid $1 $2
 
 exit 0
